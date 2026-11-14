@@ -1,0 +1,26 @@
+# Keil MDK-ARM build outputs & user-specific files
+MDK-ARM/Iwip/
+MDK-ARM/DebugConfig/
+MDK-ARM/.vscode/
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.lst
+MDK-ARM/JLinkLog.txt
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.bin
+*.map
+*.htm
+*.lnp
+*.dep
+*.build_log.htm
+
+# Keep delivered font resource binary
+!Drivers/BSP/font/resources/GB2312_H3232.bin
+
+# Local working backups, logs, and agent metadata
+work/
+.codex/
+.mxproject
