@@ -1,5 +1,5 @@
 # Keil MDK-ARM build outputs & user-specific files
-MDK-ARM/Iwip/
+MDK-ARM/lwip/
 MDK-ARM/DebugConfig/
 MDK-ARM/.vscode/
 MDK-ARM/*.uvguix.*

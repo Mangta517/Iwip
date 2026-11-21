@@ -19,20 +19,17 @@
 #define __LWIPOPTS_H__
 
 /**
- * NO_SYS==1: Provides VERY minimal functionality. Otherwise,
- * use lwIP facilities.
+ * NO_SYS==0: 使用 FreeRTOS 操作系统模式（启用 tcpip_thread、信号量/邮箱与 Netconn API）。
  */
-#define NO_SYS                  1
+#define NO_SYS                  0
 #define LWIP_SUPPORT_CUSTOM_PBUF 1
 #define LWIP_IPV4               1
 #define LWIP_IPV6               0
 
 /**
- * SYS_LIGHTWEIGHT_PROT==0: disable inter-task protection (and task-vs-interrupt
- * protection) for certain critical regions during buffer allocation, deallocation
- * and memory allocation and deallocation.
+ * SYS_LIGHTWEIGHT_PROT==1: 开启跨任务与中断临界区保护（pbuf/mem 分配与释放）。
  */
-#define SYS_LIGHTWEIGHT_PROT    0
+#define SYS_LIGHTWEIGHT_PROT    1
 
 /* ---------- Memory options ---------- */
 /* MEM_ALIGNMENT: should be set to the alignment of the CPU for which
@@ -40,9 +37,8 @@
    byte alignment -> define MEM_ALIGNMENT to 2. */
 #define MEM_ALIGNMENT           4
 
-/* MEM_SIZE: the size of the heap memory. If the application will send
-a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE                (10*1024)
+/* MEM_SIZE: the size of the heap memory. 适配 F407 128KB 主 SRAM 预算。 */
+#define MEM_SIZE                (16*1024)
 
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
@@ -63,6 +59,10 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
 #define MEMP_NUM_SYS_TIMEOUT    10
+#define MEMP_NUM_NETBUF         8
+#define MEMP_NUM_NETCONN        6
+#define MEMP_NUM_TCPIP_MSG_API  8
+#define MEMP_NUM_TCPIP_MSG_INPKT 8
 
 
 /* ---------- Pbuf options ---------- */
@@ -70,7 +70,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define PBUF_POOL_SIZE          8
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
-#define PBUF_POOL_BUFSIZE       512
+#define PBUF_POOL_BUFSIZE       1524
 
 /* ---------- TCP options ---------- */
 #define LWIP_TCP                1
@@ -145,7 +145,7 @@ a lot of data that needs to be copied, this should be set high. */
 /**
  * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
  */
-#define LWIP_NETCONN                    0
+#define LWIP_NETCONN                    1
 
 /*
    ------------------------------------
@@ -155,6 +155,25 @@ a lot of data that needs to be copied, this should be set high. */
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
+#ifndef LWIP_SOCKET
 #define LWIP_SOCKET                     0
+#endif
+
+/*
+   ---------------------------------
+   ---------- OS options ----------
+   ---------------------------------
+*/
+#define TCPIP_THREAD_NAME               "TCP/IP"
+#define TCPIP_THREAD_STACKSIZE          1024
+#define TCPIP_MBOX_SIZE                 8
+#define DEFAULT_UDP_RECVMBOX_SIZE       6
+#define DEFAULT_TCP_RECVMBOX_SIZE       6
+#define DEFAULT_ACCEPTMBOX_SIZE         6
+#define DEFAULT_RAW_RECVMBOX_SIZE       6
+#define DEFAULT_THREAD_STACKSIZE        512
+#define TCPIP_THREAD_PRIO               5
+
+#define LWIP_PROVIDE_ERRNO              1
 
 #endif /* __LWIPOPTS_H__ */

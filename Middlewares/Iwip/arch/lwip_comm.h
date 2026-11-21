@@ -37,6 +37,9 @@
 #define LWIP_DHCP_LINK_DOWN             5
 #define LWIP_MAX_DHCP_TRIES             4
 
+#define LWIP_LINK_OFF                   0
+#define LWIP_LINK_ON                    1
+
 typedef struct
 {
     uint8_t mac[6];
@@ -45,6 +48,7 @@ typedef struct
     uint8_t netmask[4];
     uint8_t gateway[4];
     uint8_t dhcpstatus;                 /* 0: 静态/未启动，1: 申请中，2: 已获取，0xFF: 超时回退。 */
+    uint8_t link_status;                /* 0: 链路断开，1: 链路已连接。 */
 } __lwip_dev;
 
 extern __lwip_dev g_lwipdev;
@@ -52,8 +56,6 @@ extern struct netif g_lwip_netif;
 
 void lwip_comm_default_ip_set(__lwip_dev *lwipx);
 uint8_t lwip_comm_init(void);
-void lwip_pkt_handle(void);
-void lwip_periodic_handle(void);
 void lwip_link_status_updated(struct netif *netif);
 
 #endif

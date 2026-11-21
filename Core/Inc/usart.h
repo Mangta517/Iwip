@@ -22,6 +22,13 @@ extern UART_HandleTypeDef huart1;
 void MX_USART1_UART_Init(void);
 
 /**
+  * @brief  Create the FreeRTOS mutex protecting USART1 output.
+  *         Must be called after the FreeRTOS scheduler starts (or after all
+  *         boot-time HAL_Delay calls) so BASEPRI does not mask SysTick.
+  */
+void USART1_InitMutex(void);
+
+/**
   * @brief  Format and transmit a log string over USART1.
   * @param  fmt: printf-style format string.
   */

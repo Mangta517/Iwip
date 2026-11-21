@@ -23,6 +23,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_task.h"
+#include "bsp_led.h"
 #include "lwip_comm.h"
 #include "bsp_nt35510_lcd.h"
 #include "gt5xx.h"
@@ -111,7 +113,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-    usart_printf("\r\n[SYS] STM32F407 + lwIP booting...\r\n");
+    BSP_LED_Init();
+    usart_printf("\r\n[SYS] STM32F407 + lwIP + FreeRTOS booting...\r\n");
     FSMC_SRAM_Init();
     NT35510_Init();
     Palette_Init(LCD_SCAN_MODE);
@@ -120,12 +123,9 @@ int main(void)
         g_touch_init_status = 1;
     }
 
-    g_lwip_init_status = lwip_comm_init();
-    if (g_lwip_init_status != 0)
-    {
-        usart_printf("[ETH] lwip_comm_init failed: %u\r\n", g_lwip_init_status);
-        Error_Handler();
-    }
+    usart_printf("[SYS] Starting FreeRTOS scheduler...\r\n");
+    App_Task_Create();
+    App_Task_Start();
 
   /* USER CODE END 2 */
 
@@ -136,9 +136,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    lwip_pkt_handle();
-    lwip_periodic_handle();
-    GTP_TouchProcess();
+    /* App_Task_Start 正常不返回；运行由 application/app_task.c 中的任务接管。 */
   }
   /* USER CODE END 3 */
 }

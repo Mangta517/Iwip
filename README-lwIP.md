@@ -1,6 +1,6 @@
-# Iwip：STM32F407 裸机 lwIP、LCD 与触摸
+# lwip：STM32F407 裸机 lwIP、LCD 与触摸
 
-本工程参考 `E:\BaiduNetdiskDownload\lwIP例程1 lwIP裸机移植.zip` 的分层，适配野火 STM32F407 霸天虎 V2。Keil 工程入口为 [MDK-ARM/Iwip.uvprojx](MDK-ARM/Iwip.uvprojx)，目标名为 `Iwip`；CubeMX 工程为 [Iwip.ioc](Iwip.ioc)。
+本工程参考 `E:\BaiduNetdiskDownload\lwIP例程1 lwIP裸机移植.zip` 的分层，适配野火 STM32F407 霸天虎 V2。Keil 工程入口为 [MDK-ARM/lwip.uvprojx](MDK-ARM/lwip.uvprojx)，目标名为 `lwip`；CubeMX 工程为 [lwip.ioc](lwip.ioc)。
 
 ## 文件分层
 
@@ -101,7 +101,7 @@ GTP_TouchProcess();
 
 调试时查看 `g_lwip_init_status`、`g_eth_handler`、`g_lwip_netif` 和 `g_lwipdev`。裸机环境使用 lwIP raw API，后续 TCP/UDP 应用需要在相应应用模块中实现。
 
-本次为手工移植，`Iwip.ioc` 保留原有外设生成配置。以后重新生成 CubeMX 工程时，需要核对 `HAL_ETH_MODULE_ENABLED`、`HAL_SPI_MODULE_ENABLED`、`HAL_SRAM_MODULE_ENABLED`，以及手工添加的 BSP/HAL/FSMC 源文件与分组；不要再生成一套重复的 ETH 句柄或 `HAL_ETH_MspInit()`。
+本次为手工移植，`lwip.ioc` 保留原有外设生成配置。以后重新生成 CubeMX 工程时，需要核对 `HAL_ETH_MODULE_ENABLED`、`HAL_SPI_MODULE_ENABLED`、`HAL_SRAM_MODULE_ENABLED`，以及手工添加的 BSP/HAL/FSMC 源文件与分组；不要再生成一套重复的 ETH 句柄或 `HAL_ETH_MspInit()`。
 
 含中文的 BSP 驱动和 lwIP 移植文件统一使用带 BOM 的 UTF-8，供 Keil 和编辑器识别。转换时逐文件确认了解码前后的文字和代码完全一致，保留 CRLF 换行。后续保存这些文件时继续使用 UTF-8 with BOM，避免再混入 GBK。
 
@@ -128,7 +128,7 @@ ASCII 8×16、16×32、24×48 的三套字模数据保持原样。画板中的�
 
 | 交付文件 | 用途与目标地址 |
 | --- | --- |
-| `MDK-ARM/Iwip/Iwip.bin` | STM32 内部 Flash，`0x08000000` |
+| `MDK-ARM/lwip/lwip.bin` | STM32 内部 Flash，`0x08000000` |
 | `Drivers/BSP/font/resources/GB2312_H3232.bin` | 外部 SPI Flash 字库区，`0x4E6000` |
 
 字库资源来自本机野火 F407 HAL 配套资料包的 `GB2312_H3232.FON`，保留全部 87×94×128 字节字模，去掉文件末尾的 CRLF。固件读取字库，不自动擦写外部 Flash。板上该区域尚未写入正确字库时，中文显示需要先准备相应资源。
@@ -146,7 +146,7 @@ ASCII 8×16、16×32、24×48 的三套字模数据保持原样。画板中的�
 & .\work\lwip-port-20261112\test_lan8720a.exe
 ```
 
-默认固件为 `MDK-ARM/Iwip/Iwip.bin`，链接起始地址为 `0x08000000`。实板运行需要另行烧录验证：
+默认固件为 `MDK-ARM/lwip/lwip.bin`，链接起始地址为 `0x08000000`。实板运行需要另行烧录验证：
 
 1. 让电脑与开发板处于同一网段，且 `192.168.1.30` 未被占用。
 2. 上电后检查网口链路灯及调试器中的网卡链路标志。
@@ -159,8 +159,8 @@ LCD/触摸/存储的本次移植记录位于 [work/lcd-touch-port-20261112](work
 
 ## 备份
 
-仅保留 `MDK-ARM/Iwip.uvprojx` 一个主工程。DHCP 作为同一工程的编译选项，验证用的临时工程和独立输出已删除，检查结果保留在日志中。
+仅保留 `MDK-ARM/lwip.uvprojx` 一个主工程。DHCP 作为同一工程的编译选项，验证用的临时工程和独立输出已删除，检查结果保留在日志中。
 
-原始源码、改名之前的工程与用户选项、编码转换前的文件集中保存在 `work/lwip-port-20261112/restore-original.zip`，压缩后已逐文件校验内容一致。工程根文件夹仍为 `batiannhuv2`，无需改变项目所在路径。
+原始源码、改名之前的工程与用户选项、编码转换前的文件集中保存在 `work/lwip-port-20261112/restore-original.zip`，压缩后已逐文件校验内容一致。工程根文件夹已改为 `lwip`（原为 `batiannhuv2`）。
 
 LCD、触摸、字体、Flash 和 SRAM 本次接入前的文件保存在 `work/lcd-touch-port-20261112/before.zip`。所有备份均为压缩包，工作区只保留一个可构建主工程。

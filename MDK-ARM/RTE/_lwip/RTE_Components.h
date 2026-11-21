@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'Iwip' 
- * Target:  'Iwip' 
+ * Project: 'lwip' 
+ * Target:  'lwip' 
  */
 
 #ifndef RTE_COMPONENTS_H

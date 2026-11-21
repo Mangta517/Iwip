@@ -2,29 +2,29 @@
 
 本项目使用野火 STM32F407ZGT6 霸天虎 V2 开发板，包含裸机 lwIP、LAN8720A 以太网、LCD、触摸、SPI Flash 和外部 SRAM。
 
-本页汇总本机资料与项目文件的位置，路径核对日期：2026-11-13。工程实现、引脚和编译说明见 [README-lwIP.md](D:/3251/stm32f407zgt6/batiannhuv2/README-lwIP.md)。
+本页汇总本机资料与项目文件的位置，路径核对日期：2026-11-13。工程实现、引脚和编译说明见 [README-lwIP.md](D:/3251/stm32f407zgt6/lwip/README-lwIP.md)。
 
 ## 1. 工程入口
 
 当前工程路径：
 
 ```text
-D:\3251\stm32f407zgt6\batiannhuv2
+D:\3251\stm32f407zgt6\lwip
 ```
 
 `D:\3251` 是指向 `D:\32 51` 的目录联接，因此下面的路径对应同一份工程：
 
 ```text
-D:\32 51\stm32f407zgt6\batiannhuv2
+D:\32 51\stm32f407zgt6\lwip
 ```
 
 | 内容 | 本机路径 |
 | --- | --- |
-| Keil 工程，目标名 Iwip | [MDK-ARM/Iwip.uvprojx](D:/3251/stm32f407zgt6/batiannhuv2/MDK-ARM/Iwip.uvprojx) |
-| CubeMX 配置 | [Iwip.ioc](D:/3251/stm32f407zgt6/batiannhuv2/Iwip.ioc) |
-| lwIP、LCD、触摸移植与使用说明 | [README-lwIP.md](D:/3251/stm32f407zgt6/batiannhuv2/README-lwIP.md) |
-| 当前目录中的固件 BIN | [MDK-ARM/Iwip/Iwip.bin](D:/3251/stm32f407zgt6/batiannhuv2/MDK-ARM/Iwip/Iwip.bin) |
-| 外部 SPI Flash 中文字库资源 | [Drivers/BSP/font/resources/GB2312_H3232.bin](D:/3251/stm32f407zgt6/batiannhuv2/Drivers/BSP/font/resources/GB2312_H3232.bin) |
+| Keil 工程，目标名 lwip | [MDK-ARM/lwip.uvprojx](D:/3251/stm32f407zgt6/lwip/MDK-ARM/lwip.uvprojx) |
+| CubeMX 配置 | [lwip.ioc](D:/3251/stm32f407zgt6/lwip/lwip.ioc) |
+| lwIP、LCD、触摸移植与使用说明 | [README-lwIP.md](D:/3251/stm32f407zgt6/lwip/README-lwIP.md) |
+| 当前目录中的固件 BIN | [MDK-ARM/lwip/lwip.bin](D:/3251/stm32f407zgt6/lwip/MDK-ARM/lwip/lwip.bin) |
+| 外部 SPI Flash 中文字库资源 | [Drivers/BSP/font/resources/GB2312_H3232.bin](D:/3251/stm32f407zgt6/lwip/Drivers/BSP/font/resources/GB2312_H3232.bin) |
 
 ## 2. 开发板配套资料
 
@@ -83,19 +83,19 @@ D:\单片机与模块资料\01_单片机与开发板\STM32\开发板配套资料
 E:\BaiduNetdiskDownload\lwIP例程1 lwIP裸机移植.zip
 ```
 
-工程内的协议栈源码位于 [Middlewares/Iwip](D:/3251/stm32f407zgt6/batiannhuv2/Middlewares/Iwip)，板级以太网驱动位于 [Drivers/BSP/ETHERNET](D:/3251/stm32f407zgt6/batiannhuv2/Drivers/BSP/ETHERNET)。
+工程内的协议栈源码位于 [Middlewares/Iwip](D:/3251/stm32f407zgt6/lwip/Middlewares/Iwip)，板级以太网驱动位于 [Drivers/BSP/ETHERNET](D:/3251/stm32f407zgt6/lwip/Drivers/BSP/ETHERNET)。
 
 ## 5. 项目调试与验证记录
 
 | 内容 | 本机路径 |
 | --- | --- |
-| lwIP 移植、PHY 测试与构建记录 | [work/lwip-port-20261112/验证记录.md](D:/3251/stm32f407zgt6/batiannhuv2/work/lwip-port-20261112/验证记录.md) |
-| LCD、触摸、字体与存储移植记录 | [work/lcd-touch-port-20261112/移植验证记录.md](D:/3251/stm32f407zgt6/batiannhuv2/work/lcd-touch-port-20261112/移植验证记录.md) |
-| LCD 白屏异常现场与诊断 | [work/lcd-white-screen-20261113/异常现场.md](D:/3251/stm32f407zgt6/batiannhuv2/work/lcd-white-screen-20261113/异常现场.md) |
-| 触摸 XY 修正差异、主机测试和构建日志 | [work/touch-xy-fix-20261113](D:/3251/stm32f407zgt6/batiannhuv2/work/touch-xy-fix-20261113) |
-| J-Link / SWD 接线参考图 | [work/jlink-wiring-20261112/J2-SWD.png](D:/3251/stm32f407zgt6/batiannhuv2/work/jlink-wiring-20261112/J2-SWD.png) |
-| lwIP 移植前的原始文件备份 | [work/lwip-port-20261112/restore-original.zip](D:/3251/stm32f407zgt6/batiannhuv2/work/lwip-port-20261112/restore-original.zip) |
-| LCD、触摸与存储接入前的文件备份 | [work/lcd-touch-port-20261112/before.zip](D:/3251/stm32f407zgt6/batiannhuv2/work/lcd-touch-port-20261112/before.zip) |
-| 白屏问题修复前的文件备份 | [work/lcd-white-screen-20261113/before.zip](D:/3251/stm32f407zgt6/batiannhuv2/work/lcd-white-screen-20261113/before.zip) |
+| lwIP 移植、PHY 测试与构建记录 | [work/lwip-port-20261112/验证记录.md](D:/3251/stm32f407zgt6/lwip/work/lwip-port-20261112/验证记录.md) |
+| LCD、触摸、字体与存储移植记录 | [work/lcd-touch-port-20261112/移植验证记录.md](D:/3251/stm32f407zgt6/lwip/work/lcd-touch-port-20261112/移植验证记录.md) |
+| LCD 白屏异常现场与诊断 | [work/lcd-white-screen-20261113/异常现场.md](D:/3251/stm32f407zgt6/lwip/work/lcd-white-screen-20261113/异常现场.md) |
+| 触摸 XY 修正差异、主机测试和构建日志 | [work/touch-xy-fix-20261113](D:/3251/stm32f407zgt6/lwip/work/touch-xy-fix-20261113) |
+| J-Link / SWD 接线参考图 | [work/jlink-wiring-20261112/J2-SWD.png](D:/3251/stm32f407zgt6/lwip/work/jlink-wiring-20261112/J2-SWD.png) |
+| lwIP 移植前的原始文件备份 | [work/lwip-port-20261112/restore-original.zip](D:/3251/stm32f407zgt6/lwip/work/lwip-port-20261112/restore-original.zip) |
+| LCD、触摸与存储接入前的文件备份 | [work/lcd-touch-port-20261112/before.zip](D:/3251/stm32f407zgt6/lwip/work/lcd-touch-port-20261112/before.zip) |
+| 白屏问题修复前的文件备份 | [work/lcd-white-screen-20261113/before.zip](D:/3251/stm32f407zgt6/lwip/work/lcd-white-screen-20261113/before.zip) |
 
 本页的核对范围是资料路径是否存在；各次主机测试、构建及实板验证情况以对应记录为准。

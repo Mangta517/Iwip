@@ -27,20 +27,32 @@
 #include "ethernetif.h"
 #include "usart.h"
 #include "stm32f4xx_hal.h"
-#include "lwip/init.h"
-#include "lwip/timeouts.h"
+#include "lwip/opt.h"
+#include "lwip/tcpip.h"
+#include "lwip/sys.h"
 #include "lwip/dhcp.h"
-#include "netif/ethernet.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
-#define LWIP_LINK_CHECK_INTERVAL_MS     100
+#define LWIP_LINK_CHECK_INTERVAL_MS     100U
+#define LWIP_LINK_TASK_PRIO             3
+#define LWIP_LINK_STK_SIZE              384
+
+#if LWIP_DHCP
+#define LWIP_DHCP_CHECK_INTERVAL_MS     250U
+#define LWIP_DHCP_TASK_PRIO             2
+#define LWIP_DHCP_STK_SIZE              384
+#endif
 
 __lwip_dev g_lwipdev;
 struct netif g_lwip_netif;
-static uint32_t lwip_link_timer;
+static uint8_t s_tcpip_initialized = 0;
+
+static void lwip_link_thread(void *argument);
 
 #if LWIP_DHCP
-static uint32_t lwip_dhcp_timer;
-static uint8_t g_lwip_dhcp_state = LWIP_DHCP_OFF;
+static volatile uint8_t g_lwip_dhcp_state = LWIP_DHCP_OFF;
+static void lwip_dhcp_thread(void *argument);
 
 static void lwip_dhcp_process(struct netif *netif)
 {
@@ -48,7 +60,9 @@ static void lwip_dhcp_process(struct netif *netif)
     ip4_addr_t netmask;
     ip4_addr_t gateway;
     struct dhcp *dhcp;
+    uint8_t log_event = 0;
 
+    LOCK_TCPIP_CORE();
     switch (g_lwip_dhcp_state)
     {
         case LWIP_DHCP_START:
@@ -58,7 +72,7 @@ static void lwip_dhcp_process(struct netif *netif)
             {
                 g_lwipdev.dhcpstatus = 1;
                 g_lwip_dhcp_state = LWIP_DHCP_WAIT_ADDRESS;
-                usart_printf("[NET] DHCP started, waiting for IP...\r\n");
+                log_event = 1;
             }
             break;
 
@@ -83,10 +97,7 @@ static void lwip_dhcp_process(struct netif *netif)
                 g_lwipdev.gateway[3] = ip4_addr4(netif_ip4_gw(netif));
                 if (newly_assigned)
                 {
-                    usart_printf("[NET] DHCP IP: %u.%u.%u.%u, Mask: %u.%u.%u.%u, GW: %u.%u.%u.%u\r\n",
-                                 g_lwipdev.ip[0], g_lwipdev.ip[1], g_lwipdev.ip[2], g_lwipdev.ip[3],
-                                 g_lwipdev.netmask[0], g_lwipdev.netmask[1], g_lwipdev.netmask[2], g_lwipdev.netmask[3],
-                                 g_lwipdev.gateway[0], g_lwipdev.gateway[1], g_lwipdev.gateway[2], g_lwipdev.gateway[3]);
+                    log_event = 2;
                 }
             }
             else
@@ -103,10 +114,7 @@ static void lwip_dhcp_process(struct netif *netif)
                     netif_set_addr(netif, &ipaddr, &netmask, &gateway);
                     g_lwipdev.dhcpstatus = 0xFF;
                     g_lwip_dhcp_state = LWIP_DHCP_TIMEOUT;
-                    usart_printf("[NET] DHCP timeout, static IP: %u.%u.%u.%u, Mask: %u.%u.%u.%u, GW: %u.%u.%u.%u\r\n",
-                                 g_lwipdev.ip[0], g_lwipdev.ip[1], g_lwipdev.ip[2], g_lwipdev.ip[3],
-                                 g_lwipdev.netmask[0], g_lwipdev.netmask[1], g_lwipdev.netmask[2], g_lwipdev.netmask[3],
-                                 g_lwipdev.gateway[0], g_lwipdev.gateway[1], g_lwipdev.gateway[2], g_lwipdev.gateway[3]);
+                    log_event = 3;
                 }
             }
             break;
@@ -117,11 +125,46 @@ static void lwip_dhcp_process(struct netif *netif)
             netif_set_addr(netif, &ipaddr, &ipaddr, &ipaddr);
             g_lwipdev.dhcpstatus = 0;
             g_lwip_dhcp_state = LWIP_DHCP_OFF;
-            usart_printf("[NET] DHCP stopped (link down)\r\n");
+            log_event = 4;
             break;
 
         default:
             break;
+    }
+    UNLOCK_TCPIP_CORE();
+
+    if (log_event == 1)
+    {
+        usart_printf("[NET] DHCP started, waiting for IP...\r\n");
+    }
+    else if (log_event == 2)
+    {
+        usart_printf("[NET] DHCP IP: %u.%u.%u.%u, Mask: %u.%u.%u.%u, GW: %u.%u.%u.%u\r\n",
+                     g_lwipdev.ip[0], g_lwipdev.ip[1], g_lwipdev.ip[2], g_lwipdev.ip[3],
+                     g_lwipdev.netmask[0], g_lwipdev.netmask[1], g_lwipdev.netmask[2], g_lwipdev.netmask[3],
+                     g_lwipdev.gateway[0], g_lwipdev.gateway[1], g_lwipdev.gateway[2], g_lwipdev.gateway[3]);
+    }
+    else if (log_event == 3)
+    {
+        usart_printf("[NET] DHCP timeout, static IP: %u.%u.%u.%u, Mask: %u.%u.%u.%u, GW: %u.%u.%u.%u\r\n",
+                     g_lwipdev.ip[0], g_lwipdev.ip[1], g_lwipdev.ip[2], g_lwipdev.ip[3],
+                     g_lwipdev.netmask[0], g_lwipdev.netmask[1], g_lwipdev.netmask[2], g_lwipdev.netmask[3],
+                     g_lwipdev.gateway[0], g_lwipdev.gateway[1], g_lwipdev.gateway[2], g_lwipdev.gateway[3]);
+    }
+    else if (log_event == 4)
+    {
+        usart_printf("[NET] DHCP stopped (link down)\r\n");
+    }
+}
+
+static void lwip_dhcp_thread(void *argument)
+{
+    struct netif *netif = (struct netif *)argument;
+
+    for (;;)
+    {
+        lwip_dhcp_process(netif);
+        vTaskDelay(pdMS_TO_TICKS(LWIP_DHCP_CHECK_INTERVAL_MS));
     }
 }
 #endif
@@ -155,6 +198,7 @@ void lwip_comm_default_ip_set(__lwip_dev *lwipx)
     lwipx->gateway[2] = 1;
     lwipx->gateway[3] = 1;
     lwipx->dhcpstatus = 0;
+    lwipx->link_status = LWIP_LINK_OFF;
 }
 
 uint8_t lwip_comm_init(void)
@@ -162,9 +206,14 @@ uint8_t lwip_comm_init(void)
     ip4_addr_t ipaddr;
     ip4_addr_t netmask;
     ip4_addr_t gateway;
+    struct netif *added_netif;
 
     lwip_comm_default_ip_set(&g_lwipdev);
-    lwip_init();
+    if (!s_tcpip_initialized)
+    {
+        tcpip_init(NULL, NULL);
+        s_tcpip_initialized = 1;
+    }
 
 #if LWIP_DHCP
     ip4_addr_set_zero(&ipaddr);
@@ -176,18 +225,36 @@ uint8_t lwip_comm_init(void)
     IP4_ADDR(&gateway, g_lwipdev.gateway[0], g_lwipdev.gateway[1], g_lwipdev.gateway[2], g_lwipdev.gateway[3]);
 #endif
 
-    if (netif_add(&g_lwip_netif, &ipaddr, &netmask, &gateway, NULL, ethernetif_init, ethernet_input) == NULL)
+    LOCK_TCPIP_CORE();
+    added_netif = netif_add(&g_lwip_netif, &ipaddr, &netmask, &gateway, NULL, ethernetif_init, tcpip_input);
+    if (added_netif == NULL)
     {
+        UNLOCK_TCPIP_CORE();
         return 1;
     }
 
     netif_set_default(&g_lwip_netif);
     netif_set_link_callback(&g_lwip_netif, lwip_link_status_updated);
     netif_set_up(&g_lwip_netif);
-    ethernetif_link_check_state(&g_lwip_netif);
-    lwip_link_timer = HAL_GetTick();
+    UNLOCK_TCPIP_CORE();
 
-    usart_printf("[ETH] lwIP init ok, MAC: %02X:%02X:%02X:%02X:%02X:%02X, Link: %s\r\n",
+    ethernetif_link_check_state(&g_lwip_netif);
+
+    sys_thread_new("eth_link",
+                   lwip_link_thread,
+                   &g_lwip_netif,
+                   LWIP_LINK_STK_SIZE,
+                   LWIP_LINK_TASK_PRIO);
+
+#if LWIP_DHCP
+    sys_thread_new("eth_dhcp",
+                   lwip_dhcp_thread,
+                   &g_lwip_netif,
+                   LWIP_DHCP_STK_SIZE,
+                   LWIP_DHCP_TASK_PRIO);
+#endif
+
+    usart_printf("[ETH] lwIP(FreeRTOS) init ok, MAC: %02X:%02X:%02X:%02X:%02X:%02X, Link: %s\r\n",
                  g_lwipdev.mac[0], g_lwipdev.mac[1], g_lwipdev.mac[2],
                  g_lwipdev.mac[3], g_lwipdev.mac[4], g_lwipdev.mac[5],
                  netif_is_link_up(&g_lwip_netif) ? "UP" : "DOWN");
@@ -202,47 +269,31 @@ uint8_t lwip_comm_init(void)
     return 0;
 }
 
-void lwip_pkt_handle(void)
-{
-    if (netif_is_link_up(&g_lwip_netif))
-    {
-        ethernetif_input(&g_lwip_netif);
-    }
-}
-
 void lwip_link_status_updated(struct netif *netif)
 {
-#if LWIP_DHCP
     if (netif_is_link_up(netif))
     {
+        g_lwipdev.link_status = LWIP_LINK_ON;
+#if LWIP_DHCP
         g_lwip_dhcp_state = LWIP_DHCP_START;
+#endif
     }
     else
     {
+        g_lwipdev.link_status = LWIP_LINK_OFF;
+#if LWIP_DHCP
         g_lwip_dhcp_state = LWIP_DHCP_LINK_DOWN;
-    }
-    lwip_dhcp_process(netif);
-#else
-    LWIP_UNUSED_ARG(netif);
 #endif
+    }
 }
 
-void lwip_periodic_handle(void)
+static void lwip_link_thread(void *argument)
 {
-    uint32_t now = HAL_GetTick();
+    struct netif *netif = (struct netif *)argument;
 
-    if ((now - lwip_link_timer) >= LWIP_LINK_CHECK_INTERVAL_MS)
+    for (;;)
     {
-        lwip_link_timer = now;
-        ethernetif_link_check_state(&g_lwip_netif);
+        ethernetif_link_check_state(netif);
+        vTaskDelay(pdMS_TO_TICKS(LWIP_LINK_CHECK_INTERVAL_MS));
     }
-
-    sys_check_timeouts();
-#if LWIP_DHCP
-    if ((now - lwip_dhcp_timer) >= DHCP_FINE_TIMER_MSECS)
-    {
-        lwip_dhcp_timer = now;
-        lwip_dhcp_process(&g_lwip_netif);
-    }
-#endif
 }

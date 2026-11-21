@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include "main.h"
 
-typedef int sys_prot_t;
+/* NO_SYS=0 时由 sys_arch.h 在 SYS_LIGHTWEIGHT_PROT 下定义 sys_prot_t。 */
 
 //#define LWIP_PROVIDE_ERRNO
 

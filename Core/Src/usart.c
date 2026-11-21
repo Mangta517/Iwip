@@ -6,11 +6,15 @@
   */
 
 #include "usart.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
 #include <stdarg.h>
 #include <stdio.h>
 
 UART_HandleTypeDef huart1;
 static uint8_t s_usart1_ready = 0;
+static SemaphoreHandle_t s_usart1_mutex = NULL;
 
 void MX_USART1_UART_Init(void)
 {
@@ -26,7 +30,18 @@ void MX_USART1_UART_Init(void)
     {
         Error_Handler();
     }
+    /* 不要在调度器启动前调用 FreeRTOS API（如 xSemaphoreCreateMutex），
+     * 否则 vPortEnterCritical 会抬高 BASEPRI 且因 uxCriticalNesting!=0 不恢复，
+     * 导致后续 NT35510_Init / GTP_Init_Panel 中的 HAL_Delay 死等。 */
     s_usart1_ready = 1;
+}
+
+void USART1_InitMutex(void)
+{
+    if (s_usart1_mutex == NULL)
+    {
+        s_usart1_mutex = xSemaphoreCreateMutex();
+    }
 }
 
 void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle)
@@ -82,5 +97,22 @@ void usart_printf(const char *fmt, ...)
         len = (int)(sizeof(buf) - 1);
     }
 
-    HAL_UART_Transmit(&huart1, (uint8_t *)buf, (uint16_t)len, 100);
+    if ((s_usart1_mutex != NULL) &&
+        (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) &&
+        (xPortIsInsideInterrupt() == pdFALSE))
+    {
+        if (xSemaphoreTake(s_usart1_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            HAL_UART_Transmit(&huart1, (uint8_t *)buf, (uint16_t)len, 100);
+            (void)xSemaphoreGive(s_usart1_mutex);
+        }
+        else
+        {
+            HAL_UART_Transmit(&huart1, (uint8_t *)buf, (uint16_t)len, 100);
+        }
+    }
+    else
+    {
+        HAL_UART_Transmit(&huart1, (uint8_t *)buf, (uint16_t)len, 100);
+    }
 }

@@ -79,4 +79,13 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 
     gpio_init_struct.Pin = ETH_TX_EN_GPIO_PIN | ETH_TXD0_GPIO_PIN | ETH_TXD1_GPIO_PIN;
     HAL_GPIO_Init(GPIOG, &gpio_init_struct);
+
+    /* FreeRTOS 可管理中断优先级区间为 5..15，ETH 中断回调会调用 FromISR API。 */
+    HAL_NVIC_SetPriority(ETH_IRQn, 6, 0);
+    HAL_NVIC_EnableIRQ(ETH_IRQn);
+}
+
+void ETH_IRQHandler(void)
+{
+    HAL_ETH_IRQHandler(&g_eth_handler);
 }
